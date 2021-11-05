@@ -4,7 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 
+	creating "github.com/darianfd99/httpApiProject/internal/creating"
+	"github.com/darianfd99/httpApiProject/internal/platform/bus/inmemory"
 	server "github.com/darianfd99/httpApiProject/internal/platform/server"
+	"github.com/darianfd99/httpApiProject/internal/platform/storage/mysql"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 const (
@@ -19,14 +23,23 @@ const (
 )
 
 func Run() error {
+
 	mysqlURI := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
 	db, err := sql.Open("mysql", mysqlURI)
 	if err != nil {
 		return err
 	}
 
-	courseRepository := mysql.NewCourseRepository(db)
+	var (
+		commandBus = inmemory.NewCommandBus()
+	)
 
-	srv := server.New(host, port, courseRepository)
+	courseRepository := mysql.NewCourseRepository(db)
+	creatingCourseService := creating.NewCourseService(courseRepository)
+
+	createCourseCommandHandler := creating.NewCourseCommandHandler(creatingCourseService)
+	commandBus.Register(creating.CourseCommandType, createCourseCommandHandler)
+
+	srv := server.New(host, port, commandBus)
 	return srv.Run()
 }

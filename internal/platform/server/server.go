@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	mooc "github.com/darianfd99/httpApiProject/internal"
 	"github.com/darianfd99/httpApiProject/internal/platform/server/handler/courses"
 	"github.com/darianfd99/httpApiProject/internal/platform/server/handler/health"
+	"github.com/darianfd99/httpApiProject/kit/command"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,15 +15,15 @@ type Server struct {
 	engine   *gin.Engine
 
 	//deps
-	courseRepository mooc.CourseRepository
+	commandBus command.Bus
 }
 
-func New(host string, port uint, courseRepository mooc.CourseRepository) Server {
+func New(host string, port uint, commandBus command.Bus) Server {
 	srv := Server{
 		engine:   gin.New(),
-		httpAddr: fmt.Sprintf("#{host}:#{port}"),
+		httpAddr: fmt.Sprintf("%s:%d", host, port),
 
-		courseRepository: courseRepository,
+		commandBus: commandBus,
 	}
 
 	srv.registerRoutes()
@@ -38,5 +38,5 @@ func (s *Server) Run() error {
 
 func (s *Server) registerRoutes() {
 	s.engine.GET("/health", health.CheckHandler())
-	s.engine.POST("/courses", courses.CreateHandler(s.courseRepository))
+	s.engine.POST("/courses", courses.CreateHandler(s.commandBus))
 }
