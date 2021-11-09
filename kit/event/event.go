@@ -11,6 +11,12 @@ import (
 type Bus interface {
 	// Publish is the method used to publish new events.
 	Publish(context.Context, []Event) error
+	//Suscribe is the method used to suscribe new event handlers
+	Subscribe(Type, Handler)
+}
+
+type Handler interface {
+	Handle(context.Context, Event) error
 }
 
 //go:generate mockery --case=snake --outpkg=eventmocks --output=eventmocks --name=Bus

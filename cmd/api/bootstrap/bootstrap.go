@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	mooc "github.com/darianfd99/httpApiProject/internal"
 	creating "github.com/darianfd99/httpApiProject/internal/creating"
+	"github.com/darianfd99/httpApiProject/internal/increasing"
 	"github.com/darianfd99/httpApiProject/internal/platform/bus/inmemory"
 	server "github.com/darianfd99/httpApiProject/internal/platform/server"
 	"github.com/darianfd99/httpApiProject/internal/platform/storage/mysql"
@@ -27,7 +29,6 @@ const (
 )
 
 func Run() error {
-
 	mysqlURI := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
 	db, err := sql.Open("mysql", mysqlURI)
 	if err != nil {
@@ -36,13 +37,21 @@ func Run() error {
 
 	var (
 		commandBus = inmemory.NewCommandBus()
+		eventBus   = inmemory.NewEventBus()
 	)
 
 	courseRepository := mysql.NewCourseRepository(db, dbTimeout)
-	creatingCourseService := creating.NewCourseService(courseRepository)
+
+	creatingCourseService := creating.NewCourseService(courseRepository, eventBus)
+	increasingCourseCounterService := increasing.NewCourseCounterService()
 
 	createCourseCommandHandler := creating.NewCourseCommandHandler(creatingCourseService)
 	commandBus.Register(creating.CourseCommandType, createCourseCommandHandler)
+
+	eventBus.Subscribe(
+		mooc.CourseCreatedEventType,
+		creating.NewIncreaseCoursesCounterOnCourseCreated(increasingCourseCounterService),
+	)
 
 	ctx, srv := server.New(context.Background(), host, port, shutdownTimeout, commandBus)
 	return srv.Run(ctx)

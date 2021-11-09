@@ -7,21 +7,22 @@ import (
 	"github.com/darianfd99/httpApiProject/kit/event"
 )
 
-//CourseService is the default CourseService interface
-//implementation returned by creating.NewCourseService
+// CourseService is the default CourseService interface
+// implementation returned by creating.NewCourseService.
 type CourseService struct {
 	courseRepository mooc.CourseRepository
 	eventBus         event.Bus
 }
 
-//NewCourseService returns the default Service interface implementation.
-func NewCourseService(courseRepository mooc.CourseRepository) CourseService {
+// NewCourseService returns the default Service interface implementation.
+func NewCourseService(courseRepository mooc.CourseRepository, eventBus event.Bus) CourseService {
 	return CourseService{
 		courseRepository: courseRepository,
+		eventBus:         eventBus,
 	}
 }
 
-//Creating implements the creating.CourseService interface.
+// CreateCourse implements the creating.CourseService interface.
 func (s CourseService) CreateCourse(ctx context.Context, id, name, duration string) error {
 	course, err := mooc.NewCourse(id, name, duration)
 	if err != nil {
@@ -32,5 +33,5 @@ func (s CourseService) CreateCourse(ctx context.Context, id, name, duration stri
 		return err
 	}
 
-	return s.eventBus.Publish(ctx, course.Events())
+	return s.eventBus.Publish(ctx, course.PullEvents())
 }
