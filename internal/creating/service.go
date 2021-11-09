@@ -4,12 +4,14 @@ import (
 	"context"
 
 	mooc "github.com/darianfd99/httpApiProject/internal"
+	"github.com/darianfd99/httpApiProject/kit/event"
 )
 
 //CourseService is the default CourseService interface
 //implementation returned by creating.NewCourseService
 type CourseService struct {
 	courseRepository mooc.CourseRepository
+	eventBus         event.Bus
 }
 
 //NewCourseService returns the default Service interface implementation.
@@ -26,5 +28,9 @@ func (s CourseService) CreateCourse(ctx context.Context, id, name, duration stri
 		return err
 	}
 
-	return s.courseRepository.Save(ctx, course)
+	if err := s.courseRepository.Save(ctx, course); err != nil {
+		return err
+	}
+
+	return s.eventBus.Publish(ctx, course.Events())
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/darianfd99/httpApiProject/kit/event"
 	"github.com/google/uuid"
 )
 
@@ -89,6 +90,8 @@ type Course struct {
 	id       CourseID
 	name     CourseName
 	duration CourseDuration
+
+	events []event.Event
 }
 
 // NewCourse creates a new course.
@@ -108,11 +111,18 @@ func NewCourse(id, name, duration string) (Course, error) {
 		return Course{}, err
 	}
 
-	return Course{
+	course := Course{
 		id:       idVO,
 		name:     nameVO,
 		duration: durationVO,
-	}, nil
+
+		events: []event.Event{},
+	}
+
+	course.Record(NewCourseCreatedEvent(idVO.String(), nameVO.String(), durationVO.String()))
+
+	return course, nil
+
 }
 
 // ID returns the course unique identifier.
@@ -128,4 +138,16 @@ func (c Course) Name() CourseName {
 // Duration returns the course duration.
 func (c Course) Duration() CourseDuration {
 	return c.duration
+}
+
+// Record records a new domain event
+func (c *Course) Record(evt event.Event) {
+	c.events = append(c.events, evt)
+}
+
+//Events return all the recovered domain events.
+func (c Course) Events() []event.Event {
+	evt := c.events
+	c.events = []event.Event{}
+	return evt
 }
