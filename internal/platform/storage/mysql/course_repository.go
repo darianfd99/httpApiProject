@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	mooc "github.com/darianfd99/httpApiProject/internal"
 	"github.com/huandu/go-sqlbuilder"
@@ -11,13 +12,15 @@ import (
 
 //CourseRepository is a MySQL mooc.CourseRepository implemetation
 type CourseRepository struct {
-	db *sql.DB
+	db        *sql.DB
+	dbTimeout time.Duration
 }
 
 //NewCourseRepository() initializes a MYSQL-based implementation
-func NewCourseRepository(db *sql.DB) *CourseRepository {
+func NewCourseRepository(db *sql.DB, dbTImeout time.Duration) *CourseRepository {
 	return &CourseRepository{
-		db: db,
+		db:        db,
+		dbTimeout: dbTImeout,
 	}
 }
 
@@ -30,7 +33,10 @@ func (r *CourseRepository) Save(ctx context.Context, course mooc.Course) error {
 		Duration: course.Duration().String(),
 	}).Build()
 
-	_, err := r.db.ExecContext(ctx, query, args...)
+	ctxTimeout, cancel := context.WithTimeout(ctx, r.dbTimeout)
+	defer cancel()
+
+	_, err := r.db.ExecContext(ctxTimeout, query, args...)
 	if err != nil {
 		return fmt.Errorf("error trying to persist course on database: %v", err)
 	}

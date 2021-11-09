@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	mooc "github.com/darianfd99/httpApiProject/internal"
@@ -24,7 +25,7 @@ func Test_CourseRepository_Save_RepositoryError(t *testing.T) {
 		WithArgs(courseID, courseName, courseDuration).
 		WillReturnError(errors.New("something-failded"))
 
-	repo := NewCourseRepository(db)
+	repo := NewCourseRepository(db, 5*time.Second)
 	err = repo.Save(context.Background(), course)
 
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
@@ -45,7 +46,7 @@ func Test_CourseRepository_Save_Succed(t *testing.T) {
 		WithArgs(courseID, courseName, courseDuration).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	repo := NewCourseRepository(db)
+	repo := NewCourseRepository(db, 5*time.Second)
 	err = repo.Save(context.Background(), course)
 
 	assert.NoError(t, sqlMock.ExpectationsWereMet())

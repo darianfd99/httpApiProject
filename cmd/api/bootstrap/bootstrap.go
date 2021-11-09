@@ -17,6 +17,7 @@ const (
 	host            = "localhost"
 	port            = 8080
 	shutdownTimeout = 10 * time.Second
+	dbTimeout       = 10 * time.Second
 
 	dbUser = "darian"
 	dbPass = "data"
@@ -37,7 +38,7 @@ func Run() error {
 		commandBus = inmemory.NewCommandBus()
 	)
 
-	courseRepository := mysql.NewCourseRepository(db)
+	courseRepository := mysql.NewCourseRepository(db, dbTimeout)
 	creatingCourseService := creating.NewCourseService(courseRepository)
 
 	createCourseCommandHandler := creating.NewCourseCommandHandler(creatingCourseService)
